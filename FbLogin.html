@@ -51,20 +51,57 @@
         }(document, 'script', 'facebook-jssdk'));
 
         function testAPI() {
-            FB.api('/me', function (response) {
+            // equivalent to fetch api address:
+            // https://graph.facebook.com/me?access_token=${access token}...
+            // FB.api('/me', function (response) {
+            //     console.log('Get User Info', response);
+            // });
+            // about getting user data, ref: https://developers.facebook.com/docs/graph-api/reference/user
+            FB.api('/me?fields=id,name,email,gender,age_range,birthday', function (response) {
                 console.log('Get User Info', response);
                 let avatorSrc = `https://graph.facebook.com/${response.id}/picture`;
-                document.querySelector('#main').innerHTML = `<img src='${avatorSrc}'/>  Welcome ${response.name}`;
+                //document.querySelector('#main').innerHTML = `<img src='${avatorSrc}'/>  Welcome ${response.name}`;
             });
+            // user feed
+            FB.api('/me/feed', function (res) {
+                console.log('user feed: ', res);
+            });
+            // page feed
+            FB.api('/100916528096800/feed', function (res) {
+                console.log('page feed: ', res);
+            });
+            
         }
 
         function onSigninClick() {
-            FB.login(function (res) {
-                statusChangeCallback(res);
-            });
+            FB.login(
+                function (res) { statusChangeCallback(res); },
+                // about getting permissions, ref: https://developers.facebook.com/docs/facebook-login/permissions
+                { scope: "public_profile,email,user_age_range,user_gender,user_posts,user_birthday,manage_pages,publish_pages" }
+            );
         }
 
+        let pageToken = null;
+
+        function onPostClick() {
+            FB.api("me/accounts", function (res) {
+                pageToken  = res.data[0].access_token;
+                console.log(pageToken);
+                FB.api(
+                    `/100916528096800/feed?access_token=${pageToken}`,
+                    "POST",
+                    {
+                        "message": "This is a test message 2"
+                    },
+                    function (response) {
+                        console.log(response);
+                    }
+                );
+            });
+
+        }
     </script>
+
     <h3> Facebook Login</h3>
 
     <div id="signin" style="display: none;">
@@ -73,6 +110,7 @@
 
     <div id="main" style="display: none;">
         Welcome
+        <button onclick="onPostClick();">Post</button>
     </div>
 
 </body>
